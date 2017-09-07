@@ -151,6 +151,7 @@
       <sourcePath path="${src.http}" />
       <sourcePath path="${src.ftp}" />
       <sourcePath path="${src.java}" />
+      <sourcePath path="${src.mqtt}" />
       <sourcePath path="${src.junit}" />
       <sourcePath path="${src.jdbc}" />
       <sourcePath path="${src.ldap}" />
@@ -173,6 +174,7 @@
       <class location="${dest.jar}/ApacheJMeter_native.jar"/>
       <class location="${dest.jar}/ApacheJMeter_mongodb.jar"/>
       <class location="${dest.jar}/ApacheJMeter_tcp.jar"/>
+      <class location="${dest.jar}/ApacheJMeter_mqtt.jar"/>
       <class location="${dest.jar.jmeter}/ApacheJMeter.jar" />
       <sourcePath path="${src.jorphan}" />
       <sourcePath path="${src.tcp}" />
@@ -229,6 +231,7 @@
   <property name="src.test" value="test/src"/>
   <property name="src.jdbc" value="src/protocol/jdbc"/>
   <property name="src.java" value="src/protocol/java"/>
+  <property name="src.mqtt" value="src/protocol/mqtt"/>
   <property name="src.junit" value="src/junit"/>
   <property name="src.components" value="src/components"/>
   <property name="src.functions" value="src/functions"/>
@@ -256,6 +259,7 @@
     <pathelement location="${src.ftp}"/>
     <pathelement location="${src.jdbc}"/>
     <pathelement location="${src.java}"/>
+    <pathelement location="${src.mqtt}"/>
     <pathelement location="${src.junit}"/>
     <pathelement location="${src.jorphan}"/>
     <pathelement location="${src.ldap}"/>
@@ -274,6 +278,7 @@
   <property name="build.ftp" value="build/protocol/ftp"/>
   <property name="build.jdbc" value="build/protocol/jdbc"/>
   <property name="build.java" value="build/protocol/java"/>
+  <property name="build.mqtt" value="build/protocol/mqtt"/>
   <property name="build.junit" value="build/junit"/>
   <property name="build.components" value="build/components"/>
   <property name="build.functions" value="build/functions"/>
@@ -457,6 +462,9 @@
     <include name="${lib.dir}/${xmlpull.jar}"/>
     <include name="${lib.dir}/${xpp3.jar}"/>
     <include name="${lib.dir}/${xstream.jar}"/>
+    <include name="${lib.dir}/${mqttclient.jar}"/>
+    <include name="${lib.dir}/${protobuf.jar}"/>
+    <include name="${lib.dir}/${minimal-json.jar}"/>
   </patternset>
 
   <!--
@@ -545,6 +553,9 @@
     <pathelement location="${lib.dir}/${xmlpull.jar}"/>
     <pathelement location="${lib.dir}/${xpp3.jar}"/>
     <pathelement location="${lib.dir}/${xstream.jar}"/>
+    <pathelement location="${lib.dir}/${mqttclient.jar}"/>
+    <pathelement location="${lib.dir}/${protobuf.jar}"/>
+    <pathelement location="${lib.dir}/${minimal-json.jar}"/>
     <!-- Generated jars -->
     <fileset dir="${lib.dir}" includes="jorphan.jar"/>
     <!-- bshclient is needed to prevent occasional test failures in TestClassFinder -->
@@ -730,6 +741,7 @@
         <pathelement location="${build.ftp}"/>
         <pathelement location="${build.functions}"/>
         <pathelement location="${build.java}"/>
+        <pathelement location="${build.mqtt}"/>
         <pathelement location="${build.jdbc}"/>
         <pathelement location="${build.jms}"/>
         <pathelement location="${build.ldap}"/>
@@ -870,7 +882,7 @@
     </javac>
   </target>
 
-  <target name="compile-protocols" depends="compile-http,compile-ftp,compile-jdbc,compile-java,compile-ldap,compile-mail,compile-tcp" description="Compile all protocol-specific components."/>
+  <target name="compile-protocols" depends="compile-http,compile-ftp,compile-jdbc,compile-java,compile-ldap,compile-mail,compile-tcp,compile-mqtt" description="Compile all protocol-specific components."/>
 
   <target name="compile-examples" depends="compile-jorphan,compile-core" description="Compile example components.">
     <mkdir dir="${build.examples}"/>
@@ -928,6 +940,35 @@
         description="Compile components specific to MongoDB sampling.">
     <mkdir dir="${build.mongodb}"/>
     <javac srcdir="${src.mongodb}" destdir="${build.mongodb}" source="${src.java.version}" optimize="${optimize}" debug="on" target="${target.java.version}"
+           includeAntRuntime="${includeAntRuntime}" deprecation="${deprecation}" encoding="${encoding}">
+      <include name="**/*.java"/>
+      <classpath>
+        <pathelement location="${build.jorphan}"/>
+        <pathelement location="${build.core}"/>
+        <path refid="classpath"/>
+      </classpath>
+    </javac>
+  </target>
+
+  <!--
+    To run protoc install it on build machine.
+    Available from: https://github.com/google/protobuf/releases
+    Use version 3.4.0
+   -->
+  <property name="proto.srcs" value="src/protocol/protobuf" />
+  <target name="generate-kurapayload"
+          description="Generate protobuf kura message format.">
+    <exec executable="protoc" failonerror="true">
+      <arg value="--java_out=src/protocol/mqtt" />
+      <arg value="--proto_path=${proto.srcs}" />
+      <arg line="${proto.srcs}/kurapayload.proto" />
+    </exec>
+  </target>
+
+  <target name="compile-mqtt" depends="compile-jorphan,compile-core,compile-components,generate-kurapayload"
+        description="Compile components specific to MQTT sampling.">
+    <mkdir dir="${build.mqtt}"/>
+    <javac srcdir="${src.mqtt}" destdir="${build.mqtt}" source="${src.java.version}" optimize="${optimize}" debug="on" target="${target.java.version}"
            includeAntRuntime="${includeAntRuntime}" deprecation="${deprecation}" encoding="${encoding}">
       <include name="**/*.java"/>
       <classpath>
@@ -1121,6 +1162,16 @@ run JMeter unless all the JMeter jars are added.
         fullpath="META-INF/LICENSE" />
       <fileset dir="${build.java}" includes="**/*.class" />
       <fileset dir="${src.java}" includes="**/*.properties" />
+    </jar>
+
+    <!-- mqtt -->
+    <jar jarfile="${dest.jar}/ApacheJMetter_mqtt.jar" manifest="${build.dir}/MANIFEST_BIN.MF">
+      <zipfileset file="${resources.meta-inf}/default.notice"
+                  fullpath="META-INF/NOTICE" />
+      <zipfileset file="${resources.meta-inf}/default.license"
+                  fullpath="META-INF/LICENSE" />
+      <fileset dir="${build.mqtt}" includes="**/*.class" />
+      <fileset dir="${src.mqtt}" includes="**/*.properties" />
     </jar>
 
     <!-- BeanShell Client -->
@@ -2186,6 +2237,7 @@ run JMeter unless all the JMeter jars are added.
     <deployfile stem="ApacheJMeter_functions"/>
     <deployfile stem="ApacheJMeter_http"/>
     <deployfile stem="ApacheJMeter_java"/>
+    <deployfile stem="ApacheJMeter_mqtt"/>
     <deployfile stem="ApacheJMeter_jdbc"/>
     <deployfile stem="ApacheJMeter_jms"/>
     <deployfile stem="ApacheJMeter_junit"/>
@@ -3434,6 +3486,9 @@ run JMeter unless all the JMeter jars are added.
     <process_jarfile jarname="ftpserver-core" dest.dir="${lib.coverage}" />
     <process_jarfile jarname="jacocoant" dest.dir="${lib.coverage}" />
     <process_jarfile jarname="sonarqube-ant-task" dest.dir="${lib.coverage}" />
+    <process_jarfile jarname="mqttclient"/>
+    <process_jarfile jarname="protobuf"/>
+    <process_jarfile jarname="minimal-json"/>
   </target>
 
   <target name="_process_doc_jars">
@@ -3541,6 +3596,7 @@ run JMeter unless all the JMeter jars are added.
                 <fileset dir="${build.ftp}"/>
                 <fileset dir="${build.http}"/>
                 <fileset dir="${build.java}"/>
+                <fileset dir="${build.mqtt}"/>
                 <fileset dir="${build.jdbc}"/>
                 <fileset dir="${build.jms}"/>
                 <fileset dir="${build.ldap}"/>
@@ -3559,6 +3615,7 @@ run JMeter unless all the JMeter jars are added.
                 <fileset dir="${src.ftp}"/>
                 <fileset dir="${src.http}"/>
                 <fileset dir="${src.java}"/>
+                <fileset dir="${src.mqtt}"/>
                 <fileset dir="${src.jdbc}"/>
                 <fileset dir="${src.jms}"/>
                 <fileset dir="${src.ldap}"/>
@@ -3720,7 +3777,7 @@ run JMeter unless all the JMeter jars are added.
     <property name="sonar.links.scm" value="http://jmeter.apache.org/svnindex.html" />
     <property name="sonar.links.issue" value="http://jmeter.apache.org/issues.html" />
     <property name="sonar.modules" value="core,http,ftp,java,jdbc,ldap,mail,components,functions,jorphan,tcp,jms,native" />
-    <property name="sonar.java.binaries" value="${build.core},${build.http},${build.core},${build.http},${build.ftp},${build.java},${build.jdbc},${build.ldap},${build.mail},${build.components},${build.functions},${build.jorphan},${build.tcp},${build.jms},${build.native}" />
+    <property name="sonar.java.binaries" value="${build.core},${build.http},${build.core},${build.http},${build.ftp},${build.java},${build.mqtt},${build.jdbc},${build.ldap},${build.mail},${build.components},${build.functions},${build.jorphan},${build.tcp},${build.jms},${build.native}" />
     <property name="sonar.java.libraries" value="lib,lib/opt" />
 
     <property name="sonar.junit.reportsPath" value="reports" />
@@ -3761,6 +3818,9 @@ run JMeter unless all the JMeter jars are added.
     <property name="java.sonar.projectName" value="java" />
     <property name="java.sonar.sources" value="${src.java}" />
     <property name="java.sonar.projectBaseDir" value="./" />
+    <property name="mqtt.sonar.projectName" value="java" />
+    <property name="mqtt.sonar.sources" value="${src.mqtt}" />
+    <property name="mqtt.sonar.projectBaseDir" value="./" />
     <property name="jdbc.sonar.projectName" value="jdbc" />
     <property name="jdbc.sonar.sources" value="${src.jdbc}" />
     <property name="jdbc.sonar.projectBaseDir" value="./" />
