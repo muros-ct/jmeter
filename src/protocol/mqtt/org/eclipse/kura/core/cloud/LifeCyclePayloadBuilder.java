@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2017 Eurotech and/or its affiliates
+ * Copyright (c) 2011, 2019 Eurotech and/or its affiliates
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -18,9 +18,6 @@ import org.eclipse.kura.core.message.KuraDisconnectPayload;
 import org.eclipse.kura.message.KuraPosition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static jodd.util.SystemUtil.osName;
-import static jodd.util.SystemUtil.osVersion;
 
 /**
  * Utility class to build lifecycle payload messages.
@@ -94,7 +91,7 @@ public class LifeCyclePayloadBuilder {
         return new KuraDeviceProfile(uptime, deviceName,
                 modelName, modelId, partNumber,
                 serialNumber, firmwareVersion, biosVersion,
-                osName(), osVersion(), javaVmName,
+                System.getProperty("os.name"), System.getProperty("os.version"), javaVmName,
                 javaVmVersion + " " + javaVmInfo,
                 javaVendor + " " + javaVersion, kuraVersion,
                 connectionInterface, connectionIp, latitude, longitude, altitude,

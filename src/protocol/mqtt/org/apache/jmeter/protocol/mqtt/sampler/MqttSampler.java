@@ -7,7 +7,6 @@ import org.apache.jmeter.samplers.Interruptible;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.ThreadListener;
-import org.eclipse.kura.core.cloud.CloudPayloadJsonDecoder;
 import org.eclipse.kura.core.cloud.CloudPayloadProtoBufEncoderImpl;
 import org.eclipse.kura.message.KuraPayload;
 import org.eclipse.paho.client.mqttv3.MqttClient;
